@@ -22,8 +22,8 @@ def create_task(plan_uuid: str, title: str) -> Task | None:
         ).first()
         if existing:
             return None
-        tasks = plan.tasks or []
-        idx = len(tasks) + 1
+        task_uuids = plan.tasks or []
+        idx = len(task_uuids) + 1
         now = _now()
         task = Task(
             uuid=str(uuid4()),
@@ -35,8 +35,7 @@ def create_task(plan_uuid: str, title: str) -> Task | None:
             updated_at=now,
         )
         session.add(task)
-        tasks.append(task.uuid)
-        plan.tasks = tasks
+        plan.tasks = task_uuids + [task.uuid]
         plan.updated_at = now
         session.add(plan)
         session.commit()
@@ -48,9 +47,9 @@ def get_tasks(plan_uuid: str | None = None) -> list[Task]:
     engine = get_engine()
     with Session(engine) as session:
         if plan_uuid:
-            statement = select(Task).where(Task.plan_uuid == plan_uuid)
+            statement = select(Task).where(Task.plan_uuid == plan_uuid).order_by(Task.idx)
         else:
-            statement = select(Task)
+            statement = select(Task).order_by(Task.idx)
         return list(session.exec(statement).all())
 
 
@@ -108,3 +107,30 @@ def update_task(
         session.commit()
         session.refresh(task)
         return task
+
+
+def swap_task_indices(plan_uuid: str, idx1: int, idx2: int) -> bool:
+    if idx1 == idx2:
+        return False
+    engine = get_engine()
+    with Session(engine) as session:
+        t1 = session.exec(
+            select(Task).where(and_(Task.plan_uuid == plan_uuid, Task.idx == idx1))
+        ).first()
+        t2 = session.exec(
+            select(Task).where(and_(Task.plan_uuid == plan_uuid, Task.idx == idx2))
+        ).first()
+        if not t1 or not t2:
+            return False
+        t1.idx, t2.idx = t2.idx, t1.idx
+        now = _now()
+        t1.updated_at = now
+        t2.updated_at = now
+        session.add(t1)
+        session.add(t2)
+        plan = session.get(Plan, plan_uuid)
+        if plan:
+            plan.updated_at = now
+            session.add(plan)
+        session.commit()
+        return True

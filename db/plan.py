@@ -57,3 +57,20 @@ def delete_plan(identifier: str) -> bool:
             session.commit()
             return True
         return False
+
+
+def rename_plan(identifier: str, new_title: str) -> bool:
+    engine = get_engine()
+    with Session(engine) as session:
+        plan = get_plan(identifier)
+        if not plan:
+            return False
+        existing = session.exec(select(Plan).where(Plan.title == new_title)).first()
+        if existing:
+            return False
+        plan.title = new_title
+        plan.updated_at = _now()
+        session.add(plan)
+        session.commit()
+        session.refresh(plan)
+        return True

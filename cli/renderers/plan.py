@@ -71,7 +71,7 @@ def render_tasks(tasks: list[Task]):
         table.add_row(
             str(task.idx),
             f'[italic]{task.title}',
-            f'[italic]{task.status.value}',
+            f'[italic]{task.status.value.replace("_", " ")}',
             f'[italic]{priority}',
             _fmt_date(task.created_at),
         )

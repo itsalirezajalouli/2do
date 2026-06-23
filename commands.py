@@ -11,3 +11,6 @@ class Command(Enum):
 
     HELP = 'help'
     H = 'h'
+
+    RENAME = 'rename'
+    R = 'r'

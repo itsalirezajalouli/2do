@@ -1,13 +1,14 @@
 import shlex
 from commands import Command
 from constants import CONSOLE
-from db.plan import create_new_plan, get_plans, get_plan, delete_plan
+from db.plan import create_new_plan, get_plans, get_plan, delete_plan, rename_plan
 from db.task import (
     create_task,
     get_tasks,
     get_task_by_plan_and_idx,
     delete_task,
     update_task,
+    swap_task_indices,
 )
 from db.models import Status, Priority
 from cli.renderers.exit import render_exit
@@ -64,6 +65,10 @@ def handle_sequences(sequence: str) -> bool:
             handle_status_change(Status.IN_PROGRESS, args)
         case 'done':
             handle_status_change(Status.DONE, args)
+        case 'swap':
+            handle_swap(args)
+        case 'rename' | 'r':
+            handle_rename(args)
         case _:
             plan = get_plan(' '.join(args))
             if plan:
@@ -92,6 +97,30 @@ def handle_status_change(status: Status, args: list[str]):
         return
     update_task(task.uuid, status=status)
     CONSOLE.print(f'[bold green]Task #{idx} set to {status.value}')
+
+
+def handle_swap(args: list[str]):
+    if len(args) < 4:
+        CONSOLE.print('[bold red]Usage: swap <plan> <idx1> <idx2>')
+        return
+    plan = get_plan(' '.join(args[1:-2]))
+    if not plan:
+        CONSOLE.print('[bold red]Plan not found')
+        return
+    try:
+        idx1 = int(args[-2])
+        idx2 = int(args[-1])
+    except ValueError:
+        CONSOLE.print('[bold red]Usage: swap <plan> <idx1> <idx2>')
+        return
+    if swap_task_indices(plan.uuid, idx1, idx2):
+        CONSOLE.print(
+            f'[bold green]Tasks #{idx1} and #{idx2} swapped in plan: {plan.title}'
+        )
+    else:
+        CONSOLE.print(
+            f'[bold red]Could not swap tasks #{idx1} and #{idx2} — check the indices are valid and different'
+        )
 
 
 def handle_new(args: list[str]):
@@ -201,6 +230,11 @@ def handle_delete(args: list[str]):
 
 
 def handle_update(args: list[str]):
+    if len(args) < 2:
+        CONSOLE.print(
+            '[bold red]Usage: u <plan> <idx> [--title <title>] [--status <status>]'
+        )
+        return
     offset = 2 if args[1] == 'task' else 1
     if len(args) < offset + 3:
         CONSOLE.print(
@@ -273,3 +307,22 @@ def handle_update(args: list[str]):
         return
     update_task(task.uuid, title=title, status=status, priority=priority)
     CONSOLE.print('[bold green]Task updated')
+
+
+def handle_rename(args: list[str]):
+    if len(args) < 3:
+        CONSOLE.print('[bold red]Usage: rename <plan> <new_title>')
+        return
+    plan = get_plan(args[1])
+    if not plan:
+        CONSOLE.print('[bold red]Plan not found')
+        return
+    if len(args) >= 3:
+        new_title = ' '.join(args[2:])
+    else:
+        CONSOLE.print('[bold red]New title is required')
+        return
+    if rename_plan(plan.uuid, new_title):
+        CONSOLE.print(f'[bold green]Plan renamed to: {new_title}')
+    else:
+        CONSOLE.print('[bold red]A plan with that title already exists')

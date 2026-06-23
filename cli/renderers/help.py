@@ -172,4 +172,12 @@ def render_help():
         '[italic blue]--title|--status|--priority',
         '[italic green]upd',
     )
+    table.add_section()
+
+    table.add_row(
+        '[italic green]swap[/italic green] [red]<plan> <idx1> <idx2>',
+        'Swaps the order of two tasks in a plan',
+        '[italic blue]<plan> <idx1> <idx2>',
+        '[italic green]swap',
+    )
     CONSOLE.print(table, justify='center')

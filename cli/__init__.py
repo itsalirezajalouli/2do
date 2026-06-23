@@ -1,46 +1,57 @@
-import readline
-import re
-from io import StringIO
+from pathlib import Path
+from prompt_toolkit import PromptSession
+from prompt_toolkit.history import FileHistory
+from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
+from prompt_toolkit.formatted_text import HTML
+from prompt_toolkit.key_binding import KeyBindings
 
 from cli.handlers import cmd_handler
+from cli.completer import TdoCompleter
 from constants import CONSOLE
 from db.command_history import save_command, load_history
-from rich.console import Console as RichConsole
-
-_RL_START = '\001'
-_RL_END = '\002'
-
-_rend = RichConsole(
-    file=StringIO(), force_terminal=True, color_system='truecolor'
-)
-
-
-def _prompt(markup: str) -> str:
-    _rend.file = StringIO()
-    _rend.print(markup, end='')
-    raw = _rend.file.getvalue()
-    parts = re.split(r'(\x1b\[[0-9;]*[a-zA-Z])', raw)
-    return ''.join(
-        f'{_RL_START}{part}{_RL_END}' if part.startswith('\x1b[') else part
-        for part in parts
-    )
+from cli.renderers.exit import render_exit
 
 
 def render_title():
     CONSOLE.clear()
-    CONSOLE.rule("[bold green]PU$H3R'S 2DO CLI", style='bold cyan')
-
-
-def render_input_prompt():
-    quit = False
-    while not quit:
-        cmd = input(_prompt('[bold green]➜ 2DO: '))
-        save_command(cmd)
-        quit = cmd_handler(cmd)
+    CONSOLE.rule('[bold green]PU$H3R\'S 2DO CLI', style='bold cyan')
 
 
 def startup():
-    for cmd in load_history(100):
-        readline.add_history(cmd)
     render_title()
-    render_input_prompt()
+
+    history_file = Path.home() / '.2do_history'
+    history = FileHistory(str(history_file))
+    if not history_file.exists():
+        for cmd in load_history(100):
+            history.append_string(cmd)
+
+    kb = KeyBindings()
+
+    @kb.add('enter')
+    def _(event):
+        b = event.current_buffer
+        if b.complete_state:
+            completions = b.complete_state.completions
+            if len(completions) == 1:
+                b.apply_completion(completions[0])
+                return
+        b.validate_and_handle()
+
+    session = PromptSession(
+        history=history,
+        auto_suggest=AutoSuggestFromHistory(),
+        completer=TdoCompleter(),
+        complete_while_typing=True,
+        key_bindings=kb,
+    )
+
+    while True:
+        try:
+            cmd = session.prompt(HTML('<ansigreen>➜ 2DO: </ansigreen>'))
+        except (EOFError, KeyboardInterrupt):
+            render_exit()
+            break
+        save_command(cmd)
+        if cmd_handler(cmd):
+            break

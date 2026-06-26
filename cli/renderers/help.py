@@ -136,13 +136,13 @@ def render_help():
         '[italic green]delete[/italic green] [yellow]plan[/yellow] [red]<name>',
         'Deletes a plan by title',
         '[italic blue]plan <name>',
-        '[italic green]d plan <name>',
+        '[italic green]d|rm plan <name>',
     )
     table.add_row(
         '[italic green]delete[/italic green] [yellow]task[/yellow] [red]<plan>[/red] [red]<idx>',
         'Deletes a task by plan and index',
         '[italic blue]task <plan> <idx>',
-        '[italic green]d task <plan> <idx>',
+        '[italic green]d|rm task <plan> <idx>',
     )
     table.add_section()
 
@@ -179,5 +179,12 @@ def render_help():
         'Swaps the order of two tasks in a plan',
         '[italic blue]<plan> <idx1> <idx2>',
         '[italic green]swap',
+    )
+    table.add_section()
+    table.add_row(
+        '[italic green]today',
+        'Shows today\'s Gregorian and Shamsi date',
+        '[italic red]✗',
+        '[italic green]today',
     )
     CONSOLE.print(table, justify='center')

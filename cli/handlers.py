@@ -55,7 +55,7 @@ def handle_sequences(sequence: str) -> bool:
             handle_get(args)
         case 'ls' | 'l':
             handle_ls(args)
-        case 'd' | 'delete':
+        case 'd' | 'delete' | 'rm':
             handle_delete(args)
         case 'u' | 'update':
             handle_update(args)
@@ -69,6 +69,8 @@ def handle_sequences(sequence: str) -> bool:
             handle_swap(args)
         case 'rename' | 'r':
             handle_rename(args)
+        case 'today':
+            handle_today(args)
         case _:
             plan = get_plan(' '.join(args))
             if plan:
@@ -307,6 +309,15 @@ def handle_update(args: list[str]):
         return
     update_task(task.uuid, title=title, status=status, priority=priority)
     CONSOLE.print('[bold green]Task updated')
+
+
+def handle_today(args: list[str]):
+    from datetime import date
+    import jdatetime
+    g = date.today()
+    j = jdatetime.date.today()
+    CONSOLE.print(f'[bold]Gregorian:[/bold] {g}')
+    CONSOLE.print(f'[bold]Shamsi:[/bold] {str(j)}')
 
 
 def handle_rename(args: list[str]):

@@ -6,9 +6,9 @@ from db.models import Status, Priority
 
 TOP_CMDS = [
     'exit', 'e', 'quit', 'q', 'help', 'h', 'schemas',
-    'new', 'n', 'get', 'g', 'ls', 'l', 'delete', 'd',
+    'new', 'n', 'get', 'g', 'ls', 'l', 'delete', 'd', 'rm',
     'update', 'u', 'pending', 'in_progress', 'inprogress', 'done',
-    'swap', 'rename', 'r',
+    'swap', 'rename', 'r', 'today',
 ]
 
 NEW_SUBS = ['plan', 'task']
@@ -54,7 +54,7 @@ class TdoCompleter(Completer):
                 candidates = NEW_SUBS
             elif cmd in ('get', 'g'):
                 candidates = GET_SUBS
-            elif cmd in ('delete', 'd'):
+            elif cmd in ('delete', 'd', 'rm'):
                 candidates = DELETE_SUBS
             elif cmd in ('pending', 'in_progress', 'inprogress', 'done'):
                 candidates = _plan_titles()
@@ -70,7 +70,7 @@ class TdoCompleter(Completer):
                 candidates = _plan_titles()
             elif cmd in ('get', 'g') and sub in ('plan', 'tasks'):
                 candidates = _plan_titles()
-            elif cmd in ('delete', 'd') and sub in ('plan', 'task'):
+            elif cmd in ('delete', 'd', 'rm') and sub in ('plan', 'task'):
                 candidates = _plan_titles()
             elif cmd in ('pending', 'in_progress', 'inprogress', 'done'):
                 candidates = _task_indices(sub)
@@ -92,7 +92,7 @@ class TdoCompleter(Completer):
                     candidates = UPDATE_FLAGS
             elif cmd in ('pending', 'in_progress', 'inprogress', 'done'):
                 candidates = _task_indices(args[1])
-            elif cmd in ('delete', 'd') and args[1] == 'task':
+            elif cmd in ('delete', 'd', 'rm') and args[1] == 'task':
                 candidates = _plan_titles()
             else:
                 candidates = []
